@@ -1,0 +1,110 @@
+/* Select Component Styles */
+
+.select-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.select-full {
+  width: 100%;
+}
+
+.select-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-700);
+}
+
+.select-required {
+  color: var(--error-500);
+  margin-left: 2px;
+}
+
+.select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.select-field {
+  width: 100%;
+  appearance: none;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  background-color: white;
+  color: var(--gray-900);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding-right: 40px;
+}
+
+.select-field:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.select-field:disabled {
+  background-color: var(--gray-100);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Sizes */
+.select-sm .select-field {
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--font-size-sm);
+}
+
+.select-md .select-field {
+  padding: var(--spacing-3) var(--spacing-4);
+  font-size: var(--font-size-base);
+}
+
+.select-lg .select-field {
+  padding: var(--spacing-4) var(--spacing-5);
+  font-size: var(--font-size-lg);
+}
+
+.select-icon {
+  position: absolute;
+  right: var(--spacing-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--gray-400);
+}
+
+/* Error State */
+.select-error .select-field {
+  border-color: var(--error-500);
+}
+
+.select-error .select-field:focus {
+  border-color: var(--error-500);
+  box-shadow: 0 0 0 3px var(--error-100);
+}
+
+.select-error .select-label {
+  color: var(--error-500);
+}
+
+.select-helper {
+  font-size: var(--font-size-sm);
+  color: var(--gray-500);
+  margin-top: var(--spacing-1);
+}
+
+.select-helper-error {
+  color: var(--error-500);
+}
+
+.select-disabled {
+  opacity: 0.7;
+}
+
+.select-disabled .select-label {
+  color: var(--gray-400);
+}

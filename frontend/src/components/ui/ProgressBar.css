@@ -1,0 +1,111 @@
+/* Progress Bar Component Styles */
+
+.progress-container {
+  width: 100%;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-2);
+}
+
+.progress-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-700);
+}
+
+.progress-value {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--gray-900);
+}
+
+.progress-track {
+  width: 100%;
+  background-color: var(--gray-200);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.5s ease;
+}
+
+/* Sizes */
+.progress-xs .progress-track {
+  height: 4px;
+}
+
+.progress-sm .progress-track {
+  height: 6px;
+}
+
+.progress-md .progress-track {
+  height: 8px;
+}
+
+.progress-lg .progress-track {
+  height: 12px;
+}
+
+.progress-xl .progress-track {
+  height: 16px;
+}
+
+/* Variants */
+.progress-bar-primary {
+  background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+}
+
+.progress-bar-secondary {
+  background: linear-gradient(90deg, var(--secondary-500), var(--secondary-600));
+}
+
+.progress-bar-success {
+  background: linear-gradient(90deg, var(--secondary-500), var(--secondary-600));
+}
+
+.progress-bar-warning {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.progress-bar-danger {
+  background: linear-gradient(90deg, var(--error-500), #dc2626);
+}
+
+.progress-bar-info {
+  background: linear-gradient(90deg, var(--info-500), #2563eb);
+}
+
+/* Animated */
+.progress-bar-animated {
+  background-size: 30px 30px;
+  animation: progress-stripes 1s linear infinite;
+}
+
+.progress-bar-animated.progress-bar-primary {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+}
+
+@keyframes progress-stripes {
+  from {
+    background-position: 30px 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}

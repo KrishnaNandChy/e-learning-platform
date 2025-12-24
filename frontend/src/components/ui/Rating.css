@@ -1,0 +1,103 @@
+/* Rating Component Styles */
+
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.rating-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.rating-star {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--gray-300);
+  cursor: default;
+  position: relative;
+}
+
+.rating-star svg {
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+.rating-star-filled {
+  color: #fbbf24;
+}
+
+.rating-star-half {
+  color: var(--gray-300);
+}
+
+.rating-star-half .rating-star-half-overlay {
+  position: absolute;
+  left: 0;
+  width: 50%;
+  overflow: hidden;
+  color: #fbbf24;
+}
+
+/* Interactive */
+.rating-interactive .rating-star {
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+
+.rating-interactive .rating-star:hover {
+  transform: scale(1.1);
+}
+
+.rating-interactive .rating-star:not(:disabled):hover,
+.rating-interactive .rating-star:not(:disabled):hover ~ .rating-star {
+  color: #fbbf24;
+}
+
+/* Sizes */
+.rating-xs .rating-star svg {
+  width: 12px;
+  height: 12px;
+}
+
+.rating-sm .rating-star svg {
+  width: 14px;
+  height: 14px;
+}
+
+.rating-md .rating-star svg {
+  width: 18px;
+  height: 18px;
+}
+
+.rating-lg .rating-star svg {
+  width: 24px;
+  height: 24px;
+}
+
+.rating-xl .rating-star svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* Info */
+.rating-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  font-size: var(--font-size-sm);
+}
+
+.rating-value {
+  font-weight: var(--font-weight-semibold);
+  color: var(--gray-700);
+}
+
+.rating-count {
+  color: var(--gray-500);
+}

@@ -1,57 +1,73 @@
-import axios from "axios";
+import axios from 'axios';
 
-const API_URL = "http://localhost:5000/api/courses";
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-export const getAllCourses = () => {
-  return axios.get(API_URL);
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add token to requests if available
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const getAllCourses = async (params = {}) => {
+  return api.get('/courses', { params });
 };
 
-export const getCourseById = (id) => {
-  return axios.get(`${API_URL}/${id}`);
+export const getCourseById = async (id) => {
+  return api.get(`/courses/${id}`);
 };
 
-// ✅ CORRECT ENROLL FUNCTION (NO JSON BODY)
-export const enrollInCourse = (courseId, token) => {
-  return axios.post(
-    `${API_URL}/${courseId}/enroll`,
-    {}, // ⬅️ EMPTY OBJECT IS REQUIRED
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    }
-  );
+export const getCoursesByCategory = async (category) => {
+  return api.get(`/courses/category/${category}`);
 };
 
-export const getInstructorCourses = (token) => {
-  return axios.get("http://localhost:5000/api/courses/my", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export const searchCourses = async (query) => {
+  return api.get('/courses/search', { params: { q: query } });
 };
 
-export const publishCourse = (courseId, token) => {
-  return axios.put(
-    `http://localhost:5000/api/courses/${courseId}/publish`,
-    {},
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+export const getEnrolledCourses = async () => {
+  return api.get('/courses/enrolled');
 };
 
-export const enrollCourse = (courseId, token) => {
-  return axios.post(
-    `http://localhost:5000/api/courses/${courseId}/enroll`,
-    {},
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+export const enrollInCourse = async (courseId) => {
+  return api.post(`/courses/${courseId}/enroll`);
 };
+
+export const getCourseProgress = async (courseId) => {
+  return api.get(`/courses/${courseId}/progress`);
+};
+
+export const updateLessonProgress = async (courseId, lessonId, data) => {
+  return api.put(`/courses/${courseId}/lessons/${lessonId}/progress`, data);
+};
+
+export const getCourseReviews = async (courseId) => {
+  return api.get(`/courses/${courseId}/reviews`);
+};
+
+export const addCourseReview = async (courseId, review) => {
+  return api.post(`/courses/${courseId}/reviews`, review);
+};
+
+export const getFeaturedCourses = async () => {
+  return api.get('/courses/featured');
+};
+
+export const getPopularCourses = async () => {
+  return api.get('/courses/popular');
+};
+
+export const getCategories = async () => {
+  return api.get('/categories');
+};
+
+export default api;
