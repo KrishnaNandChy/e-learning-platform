@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Review = require('../models/Review.model');
 const Course = require('../models/Course.model');
 const User = require('../models/User.model');
@@ -38,15 +39,18 @@ exports.getCourseReviews = async (req, res) => {
     const total = await Review.countDocuments({ course: req.params.courseId });
 
     // Get rating breakdown
-    const ratingBreakdown = await Review.aggregate([
-      { $match: { course: require('mongoose').Types.ObjectId(req.params.courseId) } },
-      {
-        $group: {
-          _id: '$rating',
-          count: { $sum: 1 },
+    let ratingBreakdown = [];
+    if (mongoose.Types.ObjectId.isValid(req.params.courseId)) {
+      ratingBreakdown = await Review.aggregate([
+        { $match: { course: new mongoose.Types.ObjectId(req.params.courseId) } },
+        {
+          $group: {
+            _id: '$rating',
+            count: { $sum: 1 },
+          },
         },
-      },
-    ]);
+      ]);
+    }
 
     res.json({
       success: true,
@@ -82,7 +86,7 @@ exports.addReview = async (req, res) => {
     // Check if user is enrolled
     const user = await User.findById(userId);
     const isEnrolled = user.enrolledCourses.some(
-      (e) => e.course.toString() === courseId
+      (e) => e.course && e.course.toString() === courseId
     );
 
     if (!isEnrolled) {
@@ -103,7 +107,7 @@ exports.addReview = async (req, res) => {
 
     // Check if completed
     const enrollment = user.enrolledCourses.find(
-      (e) => e.course.toString() === courseId
+      (e) => e.course && e.course.toString() === courseId
     );
 
     const review = await Review.create({
@@ -112,7 +116,7 @@ exports.addReview = async (req, res) => {
       rating,
       title,
       comment,
-      isVerified: enrollment.completed,
+      isVerified: enrollment?.completed || false,
     });
 
     await review.populate('user', 'name avatar');
