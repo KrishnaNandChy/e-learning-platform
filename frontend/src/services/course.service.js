@@ -1,22 +1,4 @@
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Add token to requests if available
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import api from './api';
 
 export const getAllCourses = async (params = {}) => {
   return api.get('/courses', { params });
@@ -26,16 +8,12 @@ export const getCourseById = async (id) => {
   return api.get(`/courses/${id}`);
 };
 
-export const getCoursesByCategory = async (category) => {
-  return api.get(`/courses/category/${category}`);
-};
-
-export const searchCourses = async (query) => {
-  return api.get('/courses/search', { params: { q: query } });
+export const getFeaturedCourses = async () => {
+  return api.get('/courses/featured');
 };
 
 export const getEnrolledCourses = async () => {
-  return api.get('/courses/enrolled');
+  return api.get('/courses/user/enrolled');
 };
 
 export const enrollInCourse = async (courseId) => {
@@ -46,28 +24,41 @@ export const getCourseProgress = async (courseId) => {
   return api.get(`/courses/${courseId}/progress`);
 };
 
-export const updateLessonProgress = async (courseId, lessonId, data) => {
-  return api.put(`/courses/${courseId}/lessons/${lessonId}/progress`, data);
+export const updateLessonProgress = async (courseId, lessonId) => {
+  return api.put(`/courses/${courseId}/progress`, { lessonId });
 };
 
-export const getCourseReviews = async (courseId) => {
-  return api.get(`/courses/${courseId}/reviews`);
+export const getCourseReviews = async (courseId, params = {}) => {
+  return api.get(`/courses/${courseId}/reviews`, { params });
 };
 
 export const addCourseReview = async (courseId, review) => {
   return api.post(`/courses/${courseId}/reviews`, review);
 };
 
-export const getFeaturedCourses = async () => {
-  return api.get('/courses/featured');
+export const toggleWishlist = async (courseId) => {
+  return api.post(`/courses/${courseId}/wishlist`);
 };
 
-export const getPopularCourses = async () => {
-  return api.get('/courses/popular');
+// Instructor endpoints
+export const getInstructorCourses = async () => {
+  return api.get('/courses/instructor/my-courses');
 };
 
-export const getCategories = async () => {
-  return api.get('/categories');
+export const createCourse = async (data) => {
+  return api.post('/courses', data);
+};
+
+export const updateCourse = async (id, data) => {
+  return api.put(`/courses/${id}`, data);
+};
+
+export const deleteCourse = async (id) => {
+  return api.delete(`/courses/${id}`);
+};
+
+export const publishCourse = async (id) => {
+  return api.put(`/courses/${id}/publish`);
 };
 
 export default api;

@@ -1,0 +1,249 @@
+/* Instructor Dashboard Styles */
+
+.instructor-dashboard {
+  min-height: 100vh;
+  background-color: var(--gray-50);
+  padding: var(--spacing-8) 0;
+}
+
+.instructor-stats .stat-card {
+  position: relative;
+}
+
+.stat-badge {
+  position: absolute;
+  top: var(--spacing-3);
+  right: var(--spacing-3);
+  font-size: var(--font-size-xs);
+  color: var(--gray-500);
+  background-color: var(--gray-100);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.stat-trend {
+  position: absolute;
+  bottom: var(--spacing-3);
+  right: var(--spacing-3);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.stat-trend.positive {
+  color: var(--secondary-600);
+}
+
+.stat-trend.negative {
+  color: var(--error-500);
+}
+
+.stat-reviews {
+  position: absolute;
+  bottom: var(--spacing-3);
+  right: var(--spacing-3);
+  font-size: var(--font-size-xs);
+  color: var(--gray-500);
+}
+
+/* Courses Table */
+.instructor-courses {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-6);
+  margin-bottom: var(--spacing-6);
+}
+
+.courses-table {
+  margin-top: var(--spacing-4);
+}
+
+.table-header {
+  display: none;
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: var(--gray-50);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-600);
+}
+
+@media (min-width: 1024px) {
+  .table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+    gap: var(--spacing-4);
+    align-items: center;
+  }
+}
+
+.table-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  border-bottom: 1px solid var(--border-color);
+}
+
+@media (min-width: 1024px) {
+  .table-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+    gap: var(--spacing-4);
+    align-items: center;
+  }
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.course-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.course-info img {
+  width: 80px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+}
+
+.course-info h4 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-900);
+  margin: 0 0 2px 0;
+}
+
+.course-info p {
+  font-size: var(--font-size-xs);
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.table-row .rating {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  color: var(--gray-700);
+  font-size: var(--font-size-sm);
+}
+
+.table-row .actions {
+  display: flex;
+  gap: var(--spacing-1);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-12) 0;
+  color: var(--gray-400);
+  text-align: center;
+}
+
+.empty-state p {
+  margin: var(--spacing-4) 0;
+}
+
+/* Recent Reviews */
+.recent-reviews .reviews-list {
+  margin-top: var(--spacing-4);
+}
+
+.review-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-8);
+  color: var(--gray-400);
+  text-align: center;
+}
+
+/* Quick Actions */
+.quick-actions h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--spacing-4) 0;
+}
+
+.actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-lg);
+  color: var(--gray-700);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.action-item:hover {
+  background-color: var(--primary-50);
+  color: var(--primary-600);
+}
+
+/* Performance Card */
+.performance-card h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--spacing-4) 0;
+}
+
+.performance-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.perf-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.perf-label {
+  font-size: var(--font-size-sm);
+  color: var(--gray-600);
+}
+
+.perf-value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--gray-900);
+}
+
+/* Tips Card */
+.tips-card h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--spacing-4) 0;
+}
+
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding-left: var(--spacing-4);
+}
+
+.tips-list li {
+  font-size: var(--font-size-sm);
+  color: var(--gray-600);
+  list-style-type: disc;
+}

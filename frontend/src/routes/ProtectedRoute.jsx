@@ -1,33 +1,36 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Spinner } from '../components/ui';
 
 const ProtectedRoute = ({ children, roles = [] }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  // Show loading spinner while checking auth
+  // Show loading state
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-      }}>
-        <Spinner size="lg" />
+      <div className="auth-loading">
+        <div className="spinner"></div>
+        <p>Loading...</p>
       </div>
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!user) {
+  // Not authenticated - redirect to login
+  if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check role-based access
   if (roles.length > 0 && !roles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
+    // Redirect to appropriate dashboard based on role
+    switch (user.role) {
+      case 'admin':
+        return <Navigate to="/admin/dashboard" replace />;
+      case 'instructor':
+        return <Navigate to="/instructor/dashboard" replace />;
+      default:
+        return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return children;

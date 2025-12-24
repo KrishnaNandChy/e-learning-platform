@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
@@ -8,15 +9,39 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
-import Dashboard from './pages/Dashboard';
 import Courses from './pages/Courses';
 import CourseDetail from './pages/CourseDetail';
+
+// Dashboards
+import StudentDashboard from './pages/dashboards/StudentDashboard';
+import InstructorDashboard from './pages/dashboards/InstructorDashboard';
+import AdminDashboard from './pages/dashboards/AdminDashboard';
 
 // Route Protection
 import ProtectedRoute from './routes/ProtectedRoute';
 
 // Styles
 import './index.css';
+
+// Dashboard Router Component
+const DashboardRouter = () => {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Route to appropriate dashboard based on role
+  switch (user.role) {
+    case 'admin':
+      return <AdminDashboard />;
+    case 'instructor':
+      return <InstructorDashboard />;
+    case 'student':
+    default:
+      return <StudentDashboard />;
+  }
+};
 
 function App() {
   return (
@@ -48,19 +73,73 @@ function App() {
           }
         />
 
-        {/* Auth Routes (No Layout - Custom design) */}
+        {/* Auth Routes (No Layout) */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* Protected Routes */}
+        {/* Protected Dashboard Route - Auto routes based on role */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute roles={['student', 'admin', 'instructor']}>
+            <ProtectedRoute>
               <MainLayout showFooter={false}>
-                <Dashboard />
+                <DashboardRouter />
               </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Role-specific dashboard routes */}
+        <Route
+          path="/student/dashboard"
+          element={
+            <ProtectedRoute roles={['student']}>
+              <MainLayout showFooter={false}>
+                <StudentDashboard />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/instructor/dashboard"
+          element={
+            <ProtectedRoute roles={['instructor', 'admin']}>
+              <MainLayout showFooter={false}>
+                <InstructorDashboard />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute roles={['admin']}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Instructor Course Management */}
+        <Route
+          path="/instructor/*"
+          element={
+            <ProtectedRoute roles={['instructor', 'admin']}>
+              <MainLayout showFooter={false}>
+                <InstructorDashboard />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin Panel */}
+        <Route
+          path="/admin/*"
+          element={
+            <ProtectedRoute roles={['admin']}>
+              <AdminDashboard />
             </ProtectedRoute>
           }
         />
