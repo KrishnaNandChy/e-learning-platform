@@ -1,36 +1,39 @@
 const express = require("express");
 const router = express.Router();
-
-const { protect } = require("../middleware/auth.middleware");
-const { authorizeRoles } = require("../middleware/role.middleware");
-
 const {
+  getAllCourses,
+  getCourse,
   createCourse,
-  getCourses,
-  getCourseById,
-  publishCourse,
-  enrollCourse,
-  getMyCourses,
+  updateCourse,
+  deleteCourse,
+  getInstructorCourses,
+  togglePublish,
 } = require("../controllers/course.controller");
+const { protect, authorize } = require("../middleware/auth.middleware");
 
-// ---------- PUBLIC ----------
-router.get("/", getCourses);
+router
+  .route("/")
+  .get(getAllCourses)
+  .post(protect, authorize("instructor", "admin"), createCourse);
 
-// ---------- PROTECTED ----------
-router.get("/my", protect, authorizeRoles("instructor", "admin"), getMyCourses);
+router.get(
+  "/instructor/mycourses",
+  protect,
+  authorize("instructor", "admin"),
+  getInstructorCourses
+);
 
-router.post("/", protect, authorizeRoles("instructor", "admin"), createCourse);
+router
+  .route("/:id")
+  .get(getCourse)
+  .put(protect, authorize("instructor", "admin"), updateCourse)
+  .delete(protect, authorize("instructor", "admin"), deleteCourse);
 
 router.put(
   "/:id/publish",
   protect,
-  authorizeRoles("instructor", "admin"),
-  publishCourse
+  authorize("instructor", "admin"),
+  togglePublish
 );
-
-router.post("/:id/enroll", protect, authorizeRoles("student"), enrollCourse);
-
-// ---------- PUBLIC ----------
-router.get("/:id", getCourseById);
 
 module.exports = router;
