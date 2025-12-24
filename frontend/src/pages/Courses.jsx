@@ -2,10 +2,8 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { 
   Search, 
-  Filter, 
   Grid, 
   List, 
-  ChevronDown, 
   X,
   SlidersHorizontal
 } from 'lucide-react';
@@ -14,152 +12,28 @@ import CourseCard from '../components/CourseCard';
 import { Button, Select, Badge, Spinner } from '../components/ui';
 import './Courses.css';
 
-// Mock data for demonstration
-const mockCourses = [
-  {
-    id: 1,
-    title: 'Complete Web Development Bootcamp 2024',
-    description: 'Learn HTML, CSS, JavaScript, React, Node.js and more.',
-    thumbnail: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600',
-    instructor: { name: 'Dr. Angela Yu' },
-    price: 499,
-    originalPrice: 3999,
-    rating: 4.8,
-    reviewCount: 245000,
-    studentsEnrolled: 750000,
-    duration: '65h 30m',
-    level: 'All Levels',
-    category: 'Web Development',
-    isBestseller: true,
-  },
-  {
-    id: 2,
-    title: 'Machine Learning A-Z: AI, Python & R',
-    description: 'Master Machine Learning on Python & R.',
-    thumbnail: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600',
-    instructor: { name: 'Kirill Eremenko' },
-    price: 649,
-    originalPrice: 4999,
-    rating: 4.6,
-    reviewCount: 180000,
-    studentsEnrolled: 890000,
-    duration: '44h 15m',
-    level: 'Intermediate',
-    category: 'Data Science',
-    isBestseller: true,
-  },
-  {
-    id: 3,
-    title: 'The Complete Digital Marketing Course',
-    description: 'Master Digital Marketing Strategy, Social Media.',
-    thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600',
-    instructor: { name: 'Rob Percival' },
-    price: 399,
-    originalPrice: 2999,
-    rating: 4.5,
-    reviewCount: 95000,
-    studentsEnrolled: 320000,
-    duration: '23h 45m',
-    level: 'Beginner',
-    category: 'Marketing',
-    isNew: true,
-  },
-  {
-    id: 4,
-    title: 'UI/UX Design Masterclass',
-    description: 'Learn UI/UX design from scratch.',
-    thumbnail: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600',
-    instructor: { name: 'Daniel Scott' },
-    price: 549,
-    originalPrice: 3499,
-    rating: 4.7,
-    reviewCount: 42000,
-    studentsEnrolled: 150000,
-    duration: '32h 20m',
-    level: 'Beginner',
-    category: 'Design',
-  },
-  {
-    id: 5,
-    title: 'React - The Complete Guide 2024',
-    description: 'Dive in and learn React.js from scratch!',
-    thumbnail: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600',
-    instructor: { name: 'Maximilian Schwarzmüller' },
-    price: 599,
-    originalPrice: 3999,
-    rating: 4.7,
-    reviewCount: 195000,
-    studentsEnrolled: 680000,
-    duration: '48h',
-    level: 'All Levels',
-    category: 'Web Development',
-    isBestseller: true,
-  },
-  {
-    id: 6,
-    title: 'Python for Data Science and Machine Learning',
-    description: 'Learn how to use Python for Data Science.',
-    thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=600',
-    instructor: { name: 'Jose Portilla' },
-    price: 499,
-    originalPrice: 2999,
-    rating: 4.6,
-    reviewCount: 135000,
-    studentsEnrolled: 520000,
-    duration: '25h',
-    level: 'Intermediate',
-    category: 'Data Science',
-  },
-  {
-    id: 7,
-    title: 'iOS & Swift - The Complete Development',
-    description: 'From beginner to iOS App Developer.',
-    thumbnail: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600',
-    instructor: { name: 'Dr. Angela Yu' },
-    price: 649,
-    originalPrice: 4499,
-    rating: 4.8,
-    reviewCount: 78000,
-    studentsEnrolled: 280000,
-    duration: '55h',
-    level: 'Beginner',
-    category: 'Mobile Development',
-  },
-  {
-    id: 8,
-    title: 'Photography Masterclass: Complete Guide',
-    description: 'The complete guide to photography.',
-    thumbnail: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=600',
-    instructor: { name: 'Phil Ebiner' },
-    price: 349,
-    originalPrice: 1999,
-    rating: 4.5,
-    reviewCount: 52000,
-    studentsEnrolled: 195000,
-    duration: '18h',
-    level: 'All Levels',
-    category: 'Photography',
-    isNew: true,
-  },
-];
-
 const categories = [
   'All Categories',
   'Web Development',
   'Data Science',
+  'Machine Learning',
   'Mobile Development',
   'Design',
   'Marketing',
   'Business',
   'Photography',
   'Music',
+  'DevOps',
+  'Health & Fitness',
+  'Personal Development',
 ];
 
 const levels = [
   { value: '', label: 'All Levels' },
-  { value: 'beginner', label: 'Beginner' },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'advanced', label: 'Advanced' },
+  { value: 'Beginner', label: 'Beginner' },
+  { value: 'Intermediate', label: 'Intermediate' },
+  { value: 'Advanced', label: 'Advanced' },
+  { value: 'All Levels', label: 'All Levels' },
 ];
 
 const priceRanges = [
@@ -204,77 +78,36 @@ const Courses = () => {
     const fetchCourses = async () => {
       setLoading(true);
       try {
-        const res = await getAllCourses();
-        if (res.data && res.data.length > 0) {
-          setCourses(res.data);
+        const params = {
+          search: searchQuery || undefined,
+          category: selectedCategory && selectedCategory !== 'All Categories' ? selectedCategory : undefined,
+          level: selectedLevel || undefined,
+          price: selectedPrice || undefined,
+          rating: selectedRating || undefined,
+          sort: sortBy || 'popular',
+        };
+        
+        // Remove undefined values
+        Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
+        
+        const res = await getAllCourses(params);
+        if (res.data?.success && res.data?.data?.length > 0) {
+          setCourses(res.data.data);
+        } else if (res.data?.data) {
+          setCourses(res.data.data);
         } else {
-          setCourses(mockCourses);
+          setCourses([]);
         }
       } catch (error) {
-        console.error('Failed to fetch courses, using mock data');
-        setCourses(mockCourses);
+        console.error('Failed to fetch courses:', error);
+        setCourses([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCourses();
-  }, []);
-
-  // Filter and sort courses
-  const filteredCourses = courses.filter((course) => {
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchesSearch = 
-        course.title.toLowerCase().includes(query) ||
-        course.description?.toLowerCase().includes(query) ||
-        course.category?.toLowerCase().includes(query);
-      if (!matchesSearch) return false;
-    }
-
-    // Category filter
-    if (selectedCategory && selectedCategory !== 'All Categories') {
-      if (course.category !== selectedCategory) return false;
-    }
-
-    // Level filter
-    if (selectedLevel) {
-      if (course.level?.toLowerCase() !== selectedLevel) return false;
-    }
-
-    // Rating filter
-    if (selectedRating) {
-      if (course.rating < parseFloat(selectedRating)) return false;
-    }
-
-    // Price filter
-    if (selectedPrice) {
-      if (selectedPrice === 'free' && course.price !== 0) return false;
-      if (selectedPrice === '0-500' && (course.price < 0 || course.price > 500)) return false;
-      if (selectedPrice === '500-1000' && (course.price < 500 || course.price > 1000)) return false;
-      if (selectedPrice === '1000+' && course.price < 1000) return false;
-    }
-
-    return true;
-  });
-
-  // Sort courses
-  const sortedCourses = [...filteredCourses].sort((a, b) => {
-    switch (sortBy) {
-      case 'rated':
-        return b.rating - a.rating;
-      case 'newest':
-        return b.id - a.id;
-      case 'price-low':
-        return a.price - b.price;
-      case 'price-high':
-        return b.price - a.price;
-      case 'popular':
-      default:
-        return (b.studentsEnrolled || 0) - (a.studentsEnrolled || 0);
-    }
-  });
+  }, [searchQuery, selectedCategory, selectedLevel, selectedPrice, selectedRating, sortBy]);
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -299,7 +132,7 @@ const Courses = () => {
       <div className="courses-header">
         <div className="container">
           <h1>Browse Courses</h1>
-          <p>Discover from over 50,000 online courses taught by expert instructors</p>
+          <p>Discover from thousands of online courses taught by expert instructors</p>
         </div>
       </div>
 
@@ -486,8 +319,8 @@ const Courses = () => {
           {/* Results Count */}
           <div className="courses-results-info">
             <p>
-              Showing <strong>{sortedCourses.length}</strong> 
-              {sortedCourses.length === 1 ? ' course' : ' courses'}
+              Showing <strong>{courses.length}</strong> 
+              {courses.length === 1 ? ' course' : ' courses'}
               {searchQuery && <> for "<strong>{searchQuery}</strong>"</>}
             </p>
           </div>
@@ -498,7 +331,7 @@ const Courses = () => {
               <Spinner size="lg" />
               <p>Loading courses...</p>
             </div>
-          ) : sortedCourses.length === 0 ? (
+          ) : courses.length === 0 ? (
             <div className="courses-empty">
               <div className="courses-empty-icon">
                 <Search size={48} />
@@ -511,9 +344,9 @@ const Courses = () => {
             </div>
           ) : (
             <div className={`courses-grid ${viewMode === 'list' ? 'courses-list' : ''}`}>
-              {sortedCourses.map((course) => (
+              {courses.map((course) => (
                 <CourseCard 
-                  key={course.id || course._id} 
+                  key={course._id} 
                   course={course}
                   variant={viewMode === 'list' ? 'list' : 'default'}
                 />
@@ -522,7 +355,7 @@ const Courses = () => {
           )}
 
           {/* Load More */}
-          {!loading && sortedCourses.length > 0 && (
+          {!loading && courses.length > 0 && (
             <div className="courses-load-more">
               <Button variant="outline" size="lg">
                 Load More Courses

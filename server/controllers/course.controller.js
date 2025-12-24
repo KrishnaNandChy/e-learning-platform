@@ -1,7 +1,12 @@
+const mongoose = require('mongoose');
 const Course = require('../models/Course.model');
 const User = require('../models/User.model');
-const Review = require('../models/Review.model');
 const Notification = require('../models/Notification.model');
+
+/**
+ * Helper to validate MongoDB ObjectId
+ */
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 /**
  * @desc    Get all published courses with filters
@@ -26,7 +31,10 @@ exports.getCourses = async (req, res) => {
 
     // Search
     if (search) {
-      query.$text = { $search: search };
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
     }
 
     // Category filter
@@ -35,7 +43,7 @@ exports.getCourses = async (req, res) => {
     }
 
     // Level filter
-    if (level) {
+    if (level && level !== 'All Levels') {
       query.level = { $regex: new RegExp(level, 'i') };
     }
 
@@ -114,16 +122,21 @@ exports.getCourses = async (req, res) => {
  */
 exports.getCourseById = async (req, res) => {
   try {
-    const course = await Course.findById(req.params.id)
+    const { id } = req.params;
+
+    // Validate ObjectId
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid course ID format' 
+      });
+    }
+
+    const course = await Course.findById(id)
       .populate('instructor', 'name avatar bio rating totalStudents totalCourses')
       .populate({
         path: 'sections.lessons',
         select: 'title duration type isPreview order',
-      })
-      .populate({
-        path: 'reviews',
-        options: { limit: 5, sort: { createdAt: -1 } },
-        populate: { path: 'user', select: 'name avatar' },
       });
 
     if (!course) {
@@ -211,7 +224,16 @@ exports.createCourse = async (req, res) => {
  */
 exports.updateCourse = async (req, res) => {
   try {
-    let course = await Course.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid course ID format' 
+      });
+    }
+
+    let course = await Course.findById(id);
 
     if (!course) {
       return res.status(404).json({ 
@@ -229,7 +251,7 @@ exports.updateCourse = async (req, res) => {
     }
 
     course = await Course.findByIdAndUpdate(
-      req.params.id,
+      id,
       { ...req.body, lastUpdated: new Date() },
       { new: true, runValidators: true }
     );
@@ -255,7 +277,16 @@ exports.updateCourse = async (req, res) => {
  */
 exports.deleteCourse = async (req, res) => {
   try {
-    const course = await Course.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid course ID format' 
+      });
+    }
+
+    const course = await Course.findById(id);
 
     if (!course) {
       return res.status(404).json({ 
@@ -299,7 +330,16 @@ exports.deleteCourse = async (req, res) => {
  */
 exports.publishCourse = async (req, res) => {
   try {
-    const course = await Course.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid course ID format' 
+      });
+    }
+
+    const course = await Course.findById(id);
 
     if (!course) {
       return res.status(404).json({ 
@@ -346,6 +386,13 @@ exports.enrollCourse = async (req, res) => {
     const courseId = req.params.id;
     const userId = req.user.id;
 
+    if (!isValidObjectId(courseId)) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid course ID format' 
+      });
+    }
+
     const course = await Course.findById(courseId);
     if (!course) {
       return res.status(404).json({ 
@@ -365,7 +412,7 @@ exports.enrollCourse = async (req, res) => {
 
     // Check if already enrolled
     const isEnrolled = user.enrolledCourses.some(
-      (e) => e.course.toString() === courseId
+      (e) => e.course && e.course.toString() === courseId
     );
 
     if (isEnrolled) {
@@ -417,7 +464,7 @@ exports.enrollCourse = async (req, res) => {
 
 /**
  * @desc    Get enrolled courses
- * @route   GET /api/courses/enrolled
+ * @route   GET /api/courses/user/enrolled
  * @access  Private
  */
 exports.getEnrolledCourses = async (req, res) => {
@@ -444,7 +491,7 @@ exports.getEnrolledCourses = async (req, res) => {
 
 /**
  * @desc    Get courses by instructor
- * @route   GET /api/courses/instructor
+ * @route   GET /api/courses/instructor/my-courses
  * @access  Private (Instructor)
  */
 exports.getInstructorCourses = async (req, res) => {
@@ -476,9 +523,16 @@ exports.updateProgress = async (req, res) => {
     const courseId = req.params.id;
     const userId = req.user.id;
 
+    if (!isValidObjectId(courseId)) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid course ID format' 
+      });
+    }
+
     const user = await User.findById(userId);
     const enrollment = user.enrolledCourses.find(
-      (e) => e.course.toString() === courseId
+      (e) => e.course && e.course.toString() === courseId
     );
 
     if (!enrollment) {
@@ -489,7 +543,7 @@ exports.updateProgress = async (req, res) => {
     }
 
     // Add completed lesson if not already completed
-    if (!enrollment.completedLessons.includes(lessonId)) {
+    if (lessonId && !enrollment.completedLessons.includes(lessonId)) {
       enrollment.completedLessons.push(lessonId);
     }
 
@@ -530,6 +584,14 @@ exports.updateProgress = async (req, res) => {
 exports.toggleWishlist = async (req, res) => {
   try {
     const courseId = req.params.id;
+
+    if (!isValidObjectId(courseId)) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid course ID format' 
+      });
+    }
+
     const user = await User.findById(req.user.id);
 
     const index = user.wishlist.indexOf(courseId);

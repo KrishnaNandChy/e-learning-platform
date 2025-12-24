@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowRight, 
@@ -18,74 +19,8 @@ import {
 } from 'lucide-react';
 import { Button, Card, Badge, Avatar, Rating } from '../components/ui';
 import CourseCard from '../components/CourseCard';
+import api from '../services/api';
 import './Home.css';
-
-// Mock data for demonstration
-const featuredCourses = [
-  {
-    id: 1,
-    title: 'Complete Web Development Bootcamp 2024',
-    description: 'Learn HTML, CSS, JavaScript, React, Node.js and more. Become a full-stack developer.',
-    thumbnail: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600',
-    instructor: { name: 'Dr. Angela Yu', avatar: '' },
-    price: 499,
-    originalPrice: 3999,
-    rating: 4.8,
-    reviewCount: 245000,
-    studentsEnrolled: 750000,
-    duration: '65h 30m',
-    level: 'All Levels',
-    category: 'Web Development',
-    isBestseller: true,
-  },
-  {
-    id: 2,
-    title: 'Machine Learning A-Z: AI, Python & R',
-    description: 'Master Machine Learning on Python & R with hands-on practical exercises.',
-    thumbnail: 'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=600',
-    instructor: { name: 'Kirill Eremenko', avatar: '' },
-    price: 649,
-    originalPrice: 4999,
-    rating: 4.6,
-    reviewCount: 180000,
-    studentsEnrolled: 890000,
-    duration: '44h 15m',
-    level: 'Intermediate',
-    category: 'Data Science',
-    isBestseller: true,
-  },
-  {
-    id: 3,
-    title: 'The Complete Digital Marketing Course',
-    description: 'Master Digital Marketing Strategy, Social Media Marketing, SEO, YouTube, Email & more.',
-    thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600',
-    instructor: { name: 'Rob Percival', avatar: '' },
-    price: 399,
-    originalPrice: 2999,
-    rating: 4.5,
-    reviewCount: 95000,
-    studentsEnrolled: 320000,
-    duration: '23h 45m',
-    level: 'Beginner',
-    category: 'Marketing',
-    isNew: true,
-  },
-  {
-    id: 4,
-    title: 'UI/UX Design Masterclass: Create Beautiful Interfaces',
-    description: 'Learn UI/UX design from scratch. Master Figma, design systems, and user research.',
-    thumbnail: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600',
-    instructor: { name: 'Daniel Scott', avatar: '' },
-    price: 549,
-    originalPrice: 3499,
-    rating: 4.7,
-    reviewCount: 42000,
-    studentsEnrolled: 150000,
-    duration: '32h 20m',
-    level: 'Beginner',
-    category: 'Design',
-  },
-];
 
 const categories = [
   { name: 'Development', icon: Code, count: 2500, color: '#6366f1' },
@@ -172,6 +107,26 @@ const stats = [
 ];
 
 const Home = () => {
+  const [featuredCourses, setFeaturedCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await api.get('/courses?limit=4');
+        if (response.data.success && response.data.data.length > 0) {
+          setFeaturedCourses(response.data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch courses:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
   return (
     <div className="home">
       {/* Hero Section */}
@@ -275,11 +230,25 @@ const Home = () => {
               View all courses <ArrowRight size={16} />
             </Link>
           </div>
-          <div className="courses-grid">
-            {featuredCourses.map((course) => (
-              <CourseCard key={course.id} course={course} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="courses-loading">
+              <div className="spinner"></div>
+              <p>Loading courses...</p>
+            </div>
+          ) : featuredCourses.length > 0 ? (
+            <div className="courses-grid">
+              {featuredCourses.map((course) => (
+                <CourseCard key={course._id} course={course} />
+              ))}
+            </div>
+          ) : (
+            <div className="courses-empty">
+              <p>No courses available yet. Check back soon!</p>
+              <Link to="/courses">
+                <Button variant="primary">Browse All Courses</Button>
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 

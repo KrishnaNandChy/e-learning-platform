@@ -343,6 +343,32 @@
   }
 }
 
+/* Course Loading/Empty States */
+.courses-loading,
+.courses-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-16) var(--spacing-4);
+  text-align: center;
+  gap: var(--spacing-4);
+}
+
+.courses-loading .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--gray-200);
+  border-top-color: var(--primary-600);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.courses-empty p {
+  color: var(--gray-600);
+  margin-bottom: var(--spacing-4);
+}
+
 /* Categories Section */
 .categories-section {
   background-color: var(--gray-50);

@@ -118,7 +118,7 @@ const courseSchema = new mongoose.Schema(
         ref: 'Lesson',
       }],
     }],
-    // Status
+    // Status - renamed isNew to isNewCourse to avoid Mongoose conflict
     isPublished: {
       type: Boolean,
       default: false,
@@ -131,7 +131,7 @@ const courseSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    isNew: {
+    isNewCourse: {
       type: Boolean,
       default: true,
     },

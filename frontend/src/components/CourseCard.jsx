@@ -20,15 +20,21 @@ const CourseCard = ({
     originalPrice,
     rating = 4.5,
     reviewCount = 0,
+    totalReviews = 0,
     studentsEnrolled = 0,
+    totalStudents = 0,
     duration,
     level = 'Beginner',
     category,
     isBestseller,
     isNew,
+    isNewCourse,
   } = course;
 
   const courseId = _id || id;
+  const isNewBadge = isNew || isNewCourse;
+  const reviewTotal = reviewCount || totalReviews;
+  const studentTotal = studentsEnrolled || totalStudents;
   const discount = originalPrice ? Math.round((1 - price / originalPrice) * 100) : 0;
 
   const CardWrapper = onClick ? 'div' : Link;
@@ -57,10 +63,10 @@ const CourseCard = ({
           >
             <Heart size={18} />
           </button>
-          {(isBestseller || isNew) && (
+          {(isBestseller || isNewBadge) && (
             <div className="course-card-badges">
               {isBestseller && <Badge variant="warning" size="sm">Bestseller</Badge>}
-              {isNew && <Badge variant="success" size="sm">New</Badge>}
+              {isNewBadge && <Badge variant="success" size="sm">New</Badge>}
             </div>
           )}
         </div>
@@ -90,17 +96,17 @@ const CourseCard = ({
               <BarChart size={14} />
               {level}
             </span>
-            {studentsEnrolled > 0 && (
+            {studentTotal > 0 && (
               <span className="course-card-meta-item">
                 <Users size={14} />
-                {studentsEnrolled.toLocaleString()}
+                {studentTotal.toLocaleString()}
               </span>
             )}
           </div>
 
           {/* Rating */}
           <div className="course-card-rating">
-            <Rating value={rating} size="sm" showValue showCount count={reviewCount} />
+            <Rating value={rating} size="sm" showValue showCount count={reviewTotal} />
           </div>
 
           {/* Instructor */}
