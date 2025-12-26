@@ -1,60 +1,49 @@
-import { Star } from 'lucide-react';
-import './Rating.css';
+import React from 'react';
 
-const Rating = ({
-  value = 0,
-  max = 5,
+const Rating = ({ 
+  value = 0, 
+  max = 5, 
+  showValue = true,
   size = 'md',
-  showValue = false,
-  showCount = false,
-  count = 0,
-  readonly = true,
-  onChange,
-  className = '',
-  ...props
+  count,
+  className = '' 
 }) => {
-  const handleClick = (rating) => {
-    if (!readonly && onChange) {
-      onChange(rating);
-    }
+  const sizeClasses = {
+    sm: 'text-sm',
+    md: 'text-base',
+    lg: 'text-lg',
   };
 
-  const classes = [
-    'rating',
-    `rating-${size}`,
-    !readonly ? 'rating-interactive' : '',
-    className
-  ].filter(Boolean).join(' ');
+  const stars = [];
+  for (let i = 1; i <= max; i++) {
+    if (i <= Math.floor(value)) {
+      stars.push('full');
+    } else if (i === Math.ceil(value) && value % 1 !== 0) {
+      stars.push('half');
+    } else {
+      stars.push('empty');
+    }
+  }
 
   return (
-    <div className={classes} {...props}>
-      <div className="rating-stars">
-        {[...Array(max)].map((_, index) => {
-          const starValue = index + 1;
-          const isFilled = starValue <= Math.floor(value);
-          const isHalfFilled = !isFilled && starValue - 0.5 <= value;
-
-          return (
-            <button
-              key={index}
-              type="button"
-              className={`rating-star ${isFilled ? 'rating-star-filled' : ''} ${isHalfFilled ? 'rating-star-half' : ''}`}
-              onClick={() => handleClick(starValue)}
-              disabled={readonly}
-              aria-label={`${starValue} star${starValue > 1 ? 's' : ''}`}
-            >
-              <Star />
-              {isHalfFilled && (
-                <Star className="rating-star-half-overlay" />
-              )}
-            </button>
-          );
-        })}
+    <div className={`flex items-center gap-2 ${className}`}>
+      <div className={`rating ${sizeClasses[size]}`}>
+        {stars.map((type, index) => (
+          <span key={index} className="star">
+            {type === 'full' && '★'}
+            {type === 'half' && '☆'}
+            {type === 'empty' && '☆'}
+          </span>
+        ))}
       </div>
-      {(showValue || showCount) && (
-        <span className="rating-info">
-          {showValue && <span className="rating-value">{value.toFixed(1)}</span>}
-          {showCount && <span className="rating-count">({count.toLocaleString()})</span>}
+      {showValue && (
+        <span className={`font-semibold text-gray-700 ${sizeClasses[size]}`}>
+          {value.toFixed(1)}
+        </span>
+      )}
+      {count && (
+        <span className={`text-gray-500 ${sizeClasses[size]}`}>
+          ({count.toLocaleString()})
         </span>
       )}
     </div>

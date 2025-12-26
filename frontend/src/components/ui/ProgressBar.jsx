@@ -1,41 +1,39 @@
-import './ProgressBar.css';
+import React from 'react';
 
-const ProgressBar = ({
-  value = 0,
-  max = 100,
+const ProgressBar = ({ 
+  value = 0, 
+  max = 100, 
+  showLabel = true,
+  color = 'primary',
   size = 'md',
-  variant = 'primary',
-  showLabel = false,
-  label,
-  animated = false,
-  className = '',
-  ...props
+  className = '' 
 }) => {
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
+  
+  const colorClasses = {
+    primary: 'from-primary-500 to-primary-600',
+    success: 'from-success-500 to-success-600',
+    warning: 'from-warning-500 to-warning-600',
+    danger: 'from-danger-500 to-danger-600',
+  };
 
-  const classes = [
-    'progress-container',
-    `progress-${size}`,
-    className
-  ].filter(Boolean).join(' ');
-
-  const barClasses = [
-    'progress-bar',
-    `progress-bar-${variant}`,
-    animated ? 'progress-bar-animated' : ''
-  ].filter(Boolean).join(' ');
+  const sizeClasses = {
+    sm: 'h-1',
+    md: 'h-2',
+    lg: 'h-3',
+  };
 
   return (
-    <div className={classes} {...props}>
-      {(showLabel || label) && (
-        <div className="progress-header">
-          {label && <span className="progress-label">{label}</span>}
-          {showLabel && <span className="progress-value">{Math.round(percentage)}%</span>}
+    <div className={`w-full ${className}`}>
+      {showLabel && (
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm font-medium text-gray-700">Progress</span>
+          <span className="text-sm font-semibold text-gray-900">{Math.round(percentage)}%</span>
         </div>
       )}
-      <div className="progress-track" role="progressbar" aria-valuenow={value} aria-valuemin="0" aria-valuemax={max}>
-        <div 
-          className={barClasses}
+      <div className={`progress-bar ${sizeClasses[size]}`}>
+        <div
+          className={`progress-fill bg-gradient-to-r ${colorClasses[color]}`}
           style={{ width: `${percentage}%` }}
         />
       </div>

@@ -1,40 +1,37 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect } = require('../middleware/auth.middleware');
-const { authorizeRoles } = require('../middleware/role.middleware');
 const {
   getDashboardStats,
   getAllUsers,
-  getUserById,
-  updateUser,
+  updateUserRole,
+  toggleUserActive,
   deleteUser,
-  getAllCourses,
-  toggleFeatured,
-  sendNotification,
-  createAdmin,
-} = require('../controllers/admin.controller');
+  getAllCoursesAdmin,
+  toggleCourseFeatured,
+  getPendingReviews,
+  approveReview,
+} = require("../controllers/admin.controller");
+const { protect, authorize } = require("../middleware/auth.middleware");
 
-// All routes require admin role
+// Apply admin authentication to all routes
 router.use(protect);
-router.use(authorizeRoles('admin'));
+router.use(authorize("admin"));
 
 // Dashboard
-router.get('/stats', getDashboardStats);
+router.get("/stats", getDashboardStats);
 
-// User management
-router.get('/users', getAllUsers);
-router.get('/users/:id', getUserById);
-router.put('/users/:id', updateUser);
-router.delete('/users/:id', deleteUser);
+// Users
+router.get("/users", getAllUsers);
+router.put("/users/:id/role", updateUserRole);
+router.put("/users/:id/toggle-active", toggleUserActive);
+router.delete("/users/:id", deleteUser);
 
-// Course management
-router.get('/courses', getAllCourses);
-router.put('/courses/:id/feature', toggleFeatured);
+// Courses
+router.get("/courses", getAllCoursesAdmin);
+router.put("/courses/:id/featured", toggleCourseFeatured);
 
-// Notifications
-router.post('/notifications', sendNotification);
-
-// Admin creation
-router.post('/create-admin', createAdmin);
+// Reviews
+router.get("/reviews/pending", getPendingReviews);
+router.put("/reviews/:id/approve", approveReview);
 
 module.exports = router;

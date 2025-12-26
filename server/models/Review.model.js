@@ -1,43 +1,60 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const reviewSchema = new mongoose.Schema(
   {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
     course: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Course',
-      required: true,
+      ref: "Course",
+      required: [true, "Review must belong to a course"],
     },
+
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "Review must belong to a user"],
+    },
+
     rating: {
       type: Number,
-      required: [true, 'Rating is required'],
-      min: 1,
-      max: 5,
+      required: [true, "Please provide a rating"],
+      min: [1, "Rating must be at least 1"],
+      max: [5, "Rating cannot exceed 5"],
     },
-    title: {
-      type: String,
-      maxlength: [100, 'Title cannot exceed 100 characters'],
-    },
+
     comment: {
       type: String,
-      required: [true, 'Review comment is required'],
-      maxlength: [1000, 'Comment cannot exceed 1000 characters'],
+      required: [true, "Please provide a review comment"],
+      trim: true,
+      minlength: [10, "Comment must be at least 10 characters"],
+      maxlength: [1000, "Comment cannot exceed 1000 characters"],
     },
-    helpful: {
-      type: Number,
-      default: 0,
+
+    isHelpful: {
+      helpfulCount: {
+        type: Number,
+        default: 0,
+      },
+      helpfulBy: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+      ],
     },
-    helpfulBy: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-    }],
-    isVerified: {
+
+    instructorReply: {
+      comment: String,
+      repliedAt: Date,
+    },
+
+    isApproved: {
       type: Boolean,
-      default: false, // Set to true if user has completed the course
+      default: true,
+    },
+
+    isFeatured: {
+      type: Boolean,
+      default: false,
     },
   },
   {
@@ -45,36 +62,47 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
-// One review per user per course
-reviewSchema.index({ user: 1, course: 1 }, { unique: true });
+// Ensure one review per user per course
+reviewSchema.index({ course: 1, user: 1 }, { unique: true });
 
-// Calculate average rating after save
-reviewSchema.statics.calculateAverageRating = async function(courseId) {
+// Update course rating after review is saved
+reviewSchema.post("save", async function () {
+  await this.constructor.updateCourseRating(this.course);
+});
+
+// Update course rating after review is deleted
+reviewSchema.post("remove", async function () {
+  await this.constructor.updateCourseRating(this.course);
+});
+
+// Static method to calculate average rating
+reviewSchema.statics.updateCourseRating = async function (courseId) {
   const stats = await this.aggregate([
-    { $match: { course: courseId } },
+    {
+      $match: { course: courseId, isApproved: true },
+    },
     {
       $group: {
-        _id: '$course',
-        avgRating: { $avg: '$rating' },
-        totalReviews: { $sum: 1 },
+        _id: "$course",
+        averageRating: { $avg: "$rating" },
+        count: { $sum: 1 },
       },
     },
   ]);
 
+  const Course = mongoose.model("Course");
+  
   if (stats.length > 0) {
-    await mongoose.model('Course').findByIdAndUpdate(courseId, {
-      rating: Math.round(stats[0].avgRating * 10) / 10,
-      totalReviews: stats[0].totalReviews,
+    await Course.findByIdAndUpdate(courseId, {
+      "rating.average": Math.round(stats[0].averageRating * 10) / 10,
+      "rating.count": stats[0].count,
+    });
+  } else {
+    await Course.findByIdAndUpdate(courseId, {
+      "rating.average": 0,
+      "rating.count": 0,
     });
   }
 };
 
-reviewSchema.post('save', function() {
-  this.constructor.calculateAverageRating(this.course);
-});
-
-reviewSchema.post('remove', function() {
-  this.constructor.calculateAverageRating(this.course);
-});
-
-module.exports = mongoose.model('Review', reviewSchema);
+module.exports = mongoose.model("Review", reviewSchema);

@@ -1,42 +1,39 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect } = require('../middleware/auth.middleware');
-const { authorizeRoles } = require('../middleware/role.middleware');
 const {
-  getCourses,
-  getCourseById,
-  getFeaturedCourses,
+  getAllCourses,
+  getCourse,
   createCourse,
   updateCourse,
   deleteCourse,
-  publishCourse,
-  enrollCourse,
-  getEnrolledCourses,
   getInstructorCourses,
-  updateProgress,
-  toggleWishlist,
-} = require('../controllers/course.controller');
+  togglePublish,
+} = require("../controllers/course.controller");
+const { protect, authorize } = require("../middleware/auth.middleware");
 
-const { getCourseReviews, addReview } = require('../controllers/review.controller');
+router
+  .route("/")
+  .get(getAllCourses)
+  .post(protect, authorize("instructor", "admin"), createCourse);
 
-// Public routes
-router.get('/', getCourses);
-router.get('/featured', getFeaturedCourses);
-router.get('/:id', getCourseById);
-router.get('/:courseId/reviews', getCourseReviews);
+router.get(
+  "/instructor/mycourses",
+  protect,
+  authorize("instructor", "admin"),
+  getInstructorCourses
+);
 
-// Protected routes - Student
-router.get('/user/enrolled', protect, getEnrolledCourses);
-router.post('/:id/enroll', protect, enrollCourse);
-router.put('/:id/progress', protect, updateProgress);
-router.post('/:id/wishlist', protect, toggleWishlist);
-router.post('/:courseId/reviews', protect, addReview);
+router
+  .route("/:id")
+  .get(getCourse)
+  .put(protect, authorize("instructor", "admin"), updateCourse)
+  .delete(protect, authorize("instructor", "admin"), deleteCourse);
 
-// Protected routes - Instructor
-router.get('/instructor/my-courses', protect, authorizeRoles('instructor', 'admin'), getInstructorCourses);
-router.post('/', protect, authorizeRoles('instructor', 'admin'), createCourse);
-router.put('/:id', protect, authorizeRoles('instructor', 'admin'), updateCourse);
-router.delete('/:id', protect, authorizeRoles('instructor', 'admin'), deleteCourse);
-router.put('/:id/publish', protect, authorizeRoles('instructor', 'admin'), publishCourse);
+router.put(
+  "/:id/publish",
+  protect,
+  authorize("instructor", "admin"),
+  togglePublish
+);
 
 module.exports = router;

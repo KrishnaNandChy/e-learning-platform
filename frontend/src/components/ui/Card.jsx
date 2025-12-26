@@ -1,68 +1,45 @@
-import './Card.css';
+import React from 'react';
 
-const Card = ({
-  children,
-  variant = 'default',
-  padding = 'md',
-  hoverable = false,
-  clickable = false,
-  onClick,
+const Card = ({ 
+  children, 
   className = '',
-  ...props
+  hover = false,
+  onClick,
+  ...props 
 }) => {
   const classes = [
     'card',
-    `card-${variant}`,
-    `card-padding-${padding}`,
-    hoverable ? 'card-hoverable' : '',
-    clickable ? 'card-clickable' : '',
-    className
+    hover && 'cursor-pointer transform hover:-translate-y-1',
+    className,
   ].filter(Boolean).join(' ');
 
-  const Component = clickable ? 'button' : 'div';
-
   return (
-    <Component
-      className={classes}
-      onClick={onClick}
-      {...props}
-    >
+    <div className={classes} onClick={onClick} {...props}>
       {children}
-    </Component>
+    </div>
   );
 };
 
-// Card Header
-const CardHeader = ({ children, className = '', ...props }) => (
-  <div className={`card-header ${className}`} {...props}>
+const CardHeader = ({ children, className = '' }) => (
+  <div className={`px-6 py-4 border-b border-gray-200 ${className}`}>
     {children}
   </div>
 );
 
-// Card Body
-const CardBody = ({ children, className = '', ...props }) => (
-  <div className={`card-body ${className}`} {...props}>
+const CardBody = ({ children, className = '' }) => (
+  <div className={`card-body ${className}`}>
     {children}
   </div>
 );
 
-// Card Footer
-const CardFooter = ({ children, className = '', ...props }) => (
-  <div className={`card-footer ${className}`} {...props}>
+const CardFooter = ({ children, className = '' }) => (
+  <div className={`px-6 py-4 border-t border-gray-200 bg-gray-50 ${className}`}>
     {children}
-  </div>
-);
-
-// Card Image
-const CardImage = ({ src, alt, aspectRatio = '16/9', className = '', ...props }) => (
-  <div className={`card-image ${className}`} style={{ aspectRatio }} {...props}>
-    <img src={src} alt={alt} loading="lazy" />
   </div>
 );
 
 Card.Header = CardHeader;
 Card.Body = CardBody;
 Card.Footer = CardFooter;
-Card.Image = CardImage;
 
 export default Card;

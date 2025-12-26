@@ -1,411 +1,339 @@
-const User = require('../models/User.model');
-const Course = require('../models/Course.model');
-const Review = require('../models/Review.model');
-const Notification = require('../models/Notification.model');
+const User = require("../models/User.model");
+const Course = require("../models/Course.model");
+const Enrollment = require("../models/Enrollment.model");
+const Review = require("../models/Review.model");
+const Category = require("../models/Category.model");
 
-/**
- * @desc    Get dashboard statistics
- * @route   GET /api/admin/stats
- * @access  Private (Admin)
- */
-exports.getDashboardStats = async (req, res) => {
+// @desc    Get admin dashboard statistics
+// @route   GET /api/admin/stats
+// @access  Private (Admin)
+exports.getDashboardStats = async (req, res, next) => {
   try {
-    // Get counts
+    // Total counts
     const totalUsers = await User.countDocuments();
-    const totalStudents = await User.countDocuments({ role: 'student' });
-    const totalInstructors = await User.countDocuments({ role: 'instructor' });
     const totalCourses = await Course.countDocuments();
-    const publishedCourses = await Course.countDocuments({ isPublished: true });
+    const totalEnrollments = await Enrollment.countDocuments();
+    const totalRevenue = await Enrollment.aggregate([
+      {
+        $lookup: {
+          from: "courses",
+          localField: "course",
+          foreignField: "_id",
+          as: "courseInfo",
+        },
+      },
+      { $unwind: "$courseInfo" },
+      { $group: { _id: null, total: { $sum: "$courseInfo.price" } } },
+    ]);
 
-    // Get recent activity
-    const recentUsers = await User.find()
+    // Users by role
+    const usersByRole = await User.aggregate([
+      { $group: { _id: "$role", count: { $sum: 1 } } },
+    ]);
+
+    // Recent enrollments
+    const recentEnrollments = await Enrollment.find()
+      .populate("student", "name email avatar")
+      .populate("course", "title thumbnail")
       .sort({ createdAt: -1 })
-      .limit(5)
-      .select('name email role createdAt');
+      .limit(10);
 
-    const recentCourses = await Course.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .select('title instructor isPublished createdAt')
-      .populate('instructor', 'name');
+    // Top courses
+    const topCourses = await Course.find()
+      .sort({ "stats.totalStudents": -1 })
+      .limit(10)
+      .select("title thumbnail stats rating");
 
-    // Calculate enrollments
-    const enrollmentStats = await User.aggregate([
-      { $unwind: '$enrolledCourses' },
+    // Monthly revenue trend (last 6 months)
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const monthlyRevenue = await Enrollment.aggregate([
+      { $match: { createdAt: { $gte: sixMonthsAgo } } },
+      {
+        $lookup: {
+          from: "courses",
+          localField: "course",
+          foreignField: "_id",
+          as: "courseInfo",
+        },
+      },
+      { $unwind: "$courseInfo" },
       {
         $group: {
           _id: {
-            $dateToString: { format: '%Y-%m-%d', date: '$enrolledCourses.enrolledAt' },
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
           },
+          revenue: { $sum: "$courseInfo.price" },
           count: { $sum: 1 },
         },
       },
-      { $sort: { _id: -1 } },
-      { $limit: 30 },
+      { $sort: { "_id.year": 1, "_id.month": 1 } },
     ]);
 
-    // Category distribution
-    const categoryStats = await Course.aggregate([
-      { $match: { isPublished: true } },
-      {
-        $group: {
-          _id: '$category',
-          count: { $sum: 1 },
-          totalStudents: { $sum: '$totalStudents' },
-        },
-      },
-      { $sort: { count: -1 } },
-    ]);
-
-    res.json({
+    res.status(200).json({
       success: true,
-      data: {
-        overview: {
-          totalUsers,
-          totalStudents,
-          totalInstructors,
-          totalCourses,
-          publishedCourses,
-        },
-        recentUsers,
-        recentCourses,
-        enrollmentStats,
-        categoryStats,
+      stats: {
+        totalUsers,
+        totalCourses,
+        totalEnrollments,
+        totalRevenue: totalRevenue[0]?.total || 0,
+        usersByRole,
+        recentEnrollments,
+        topCourses,
+        monthlyRevenue,
       },
     });
   } catch (error) {
-    console.error('Get dashboard stats error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Failed to fetch dashboard statistics' 
-    });
+    next(error);
   }
 };
 
-/**
- * @desc    Get all users
- * @route   GET /api/admin/users
- * @access  Private (Admin)
- */
-exports.getAllUsers = async (req, res) => {
+// @desc    Get all users
+// @route   GET /api/admin/users
+// @access  Private (Admin)
+exports.getAllUsers = async (req, res, next) => {
   try {
-    const { search, role, status, page = 1, limit = 10 } = req.query;
+    const { role, search, page = 1, limit = 20 } = req.query;
 
     const query = {};
-
+    if (role) query.role = role;
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
       ];
     }
 
-    if (role) {
-      query.role = role;
-    }
-
-    if (status === 'active') {
-      query.isActive = true;
-    } else if (status === 'inactive') {
-      query.isActive = false;
-    }
-
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (page - 1) * limit;
 
     const users = await User.find(query)
-      .select('-password')
+      .select("-password")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
     const total = await User.countDocuments(query);
 
-    res.json({
+    res.status(200).json({
       success: true,
-      data: users,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / parseInt(limit)),
-      },
+      count: users.length,
+      total,
+      pages: Math.ceil(total / limit),
+      users,
     });
   } catch (error) {
-    console.error('Get all users error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Failed to fetch users' 
-    });
+    next(error);
   }
 };
 
-/**
- * @desc    Get user by ID
- * @route   GET /api/admin/users/:id
- * @access  Private (Admin)
- */
-exports.getUserById = async (req, res) => {
+// @desc    Update user role
+// @route   PUT /api/admin/users/:id/role
+// @access  Private (Admin)
+exports.updateUserRole = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id)
-      .select('-password')
-      .populate('enrolledCourses.course', 'title thumbnail');
+    const { role } = req.body;
 
-    if (!user) {
-      return res.status(404).json({ 
+    if (!["student", "instructor", "admin"].includes(role)) {
+      return res.status(400).json({
         success: false,
-        message: 'User not found' 
+        message: "Invalid role",
       });
     }
-
-    res.json({
-      success: true,
-      data: user,
-    });
-  } catch (error) {
-    console.error('Get user error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Failed to fetch user' 
-    });
-  }
-};
-
-/**
- * @desc    Update user
- * @route   PUT /api/admin/users/:id
- * @access  Private (Admin)
- */
-exports.updateUser = async (req, res) => {
-  try {
-    const { name, email, role, isActive } = req.body;
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { name, email, role, isActive },
+      { role },
       { new: true, runValidators: true }
-    ).select('-password');
+    ).select("-password");
 
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: 'User not found' 
+        message: "User not found",
       });
     }
 
-    res.json({
+    res.status(200).json({
       success: true,
-      message: 'User updated successfully',
-      data: user,
+      message: "User role updated successfully",
+      user,
     });
   } catch (error) {
-    console.error('Update user error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Failed to update user' 
-    });
+    next(error);
   }
 };
 
-/**
- * @desc    Delete user
- * @route   DELETE /api/admin/users/:id
- * @access  Private (Admin)
- */
-exports.deleteUser = async (req, res) => {
+// @desc    Deactivate/Activate user
+// @route   PUT /api/admin/users/:id/toggle-active
+// @access  Private (Admin)
+exports.toggleUserActive = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
 
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: 'User not found' 
+        message: "User not found",
       });
     }
 
-    // Don't allow deleting admin users
-    if (user.role === 'admin') {
-      return res.status(400).json({ 
+    user.isActive = !user.isActive;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `User ${user.isActive ? "activated" : "deactivated"} successfully`,
+      user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Delete user
+// @route   DELETE /api/admin/users/:id
+// @access  Private (Admin)
+exports.deleteUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
         success: false,
-        message: 'Cannot delete admin users' 
+        message: "User not found",
+      });
+    }
+
+    // Prevent deleting yourself
+    if (user._id.toString() === req.user.id) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete your own account",
       });
     }
 
     await user.deleteOne();
 
-    res.json({
+    res.status(200).json({
       success: true,
-      message: 'User deleted successfully',
+      message: "User deleted successfully",
     });
   } catch (error) {
-    console.error('Delete user error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Failed to delete user' 
-    });
+    next(error);
   }
 };
 
-/**
- * @desc    Get all courses (admin view)
- * @route   GET /api/admin/courses
- * @access  Private (Admin)
- */
-exports.getAllCourses = async (req, res) => {
+// @desc    Get all courses for admin
+// @route   GET /api/admin/courses
+// @access  Private (Admin)
+exports.getAllCoursesAdmin = async (req, res, next) => {
   try {
-    const { search, category, status, page = 1, limit = 10 } = req.query;
+    const { status, category, page = 1, limit = 20 } = req.query;
 
     const query = {};
+    if (status === "published") query.isPublished = true;
+    if (status === "draft") query.isPublished = false;
+    if (category) query.category = category;
 
-    if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-      ];
-    }
-
-    if (category) {
-      query.category = category;
-    }
-
-    if (status === 'published') {
-      query.isPublished = true;
-    } else if (status === 'draft') {
-      query.isPublished = false;
-    }
-
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (page - 1) * limit;
 
     const courses = await Course.find(query)
-      .populate('instructor', 'name email')
+      .populate("instructor", "name email")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
     const total = await Course.countDocuments(query);
 
-    res.json({
+    res.status(200).json({
       success: true,
-      data: courses,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / parseInt(limit)),
-      },
+      count: courses.length,
+      total,
+      pages: Math.ceil(total / limit),
+      courses,
     });
   } catch (error) {
-    console.error('Get all courses error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Failed to fetch courses' 
-    });
+    next(error);
   }
 };
 
-/**
- * @desc    Toggle course featured status
- * @route   PUT /api/admin/courses/:id/feature
- * @access  Private (Admin)
- */
-exports.toggleFeatured = async (req, res) => {
+// @desc    Toggle course featured status
+// @route   PUT /api/admin/courses/:id/featured
+// @access  Private (Admin)
+exports.toggleCourseFeatured = async (req, res, next) => {
   try {
     const course = await Course.findById(req.params.id);
 
     if (!course) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: 'Course not found' 
+        message: "Course not found",
       });
     }
 
     course.isFeatured = !course.isFeatured;
     await course.save();
 
-    res.json({
+    res.status(200).json({
       success: true,
-      message: course.isFeatured ? 'Course featured' : 'Course unfeatured',
-      data: course,
+      message: `Course ${course.isFeatured ? "featured" : "unfeatured"} successfully`,
+      course,
     });
   } catch (error) {
-    console.error('Toggle featured error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Failed to update course' 
-    });
+    next(error);
   }
 };
 
-/**
- * @desc    Send notification to users
- * @route   POST /api/admin/notifications
- * @access  Private (Admin)
- */
-exports.sendNotification = async (req, res) => {
+// @desc    Get pending reviews
+// @route   GET /api/admin/reviews/pending
+// @access  Private (Admin)
+exports.getPendingReviews = async (req, res, next) => {
   try {
-    const { userIds, type, title, message, data } = req.body;
+    const reviews = await Review.find({ isApproved: false })
+      .populate("user", "name email avatar")
+      .populate("course", "title")
+      .sort({ createdAt: -1 });
 
-    const notifications = userIds.map((userId) => ({
-      user: userId,
-      type: type || 'announcement',
-      title,
-      message,
-      data,
-    }));
-
-    await Notification.insertMany(notifications);
-
-    res.json({
+    res.status(200).json({
       success: true,
-      message: `Notification sent to ${userIds.length} users`,
+      count: reviews.length,
+      reviews,
     });
   } catch (error) {
-    console.error('Send notification error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Failed to send notification' 
-    });
+    next(error);
   }
 };
 
-/**
- * @desc    Create admin user
- * @route   POST /api/admin/create-admin
- * @access  Private (Admin)
- */
-exports.createAdmin = async (req, res) => {
+// @desc    Approve/Reject review
+// @route   PUT /api/admin/reviews/:id/approve
+// @access  Private (Admin)
+exports.approveReview = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { isApproved } = req.body;
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ 
+    const review = await Review.findByIdAndUpdate(
+      req.params.id,
+      { isApproved },
+      { new: true }
+    );
+
+    if (!review) {
+      return res.status(404).json({
         success: false,
-        message: 'User with this email already exists' 
+        message: "Review not found",
       });
     }
 
-    const admin = await User.create({
-      name,
-      email,
-      password,
-      role: 'admin',
-      isVerified: true,
-    });
-
-    res.status(201).json({
+    res.status(200).json({
       success: true,
-      message: 'Admin user created successfully',
-      data: {
-        id: admin._id,
-        name: admin.name,
-        email: admin.email,
-        role: admin.role,
-      },
+      message: `Review ${isApproved ? "approved" : "rejected"} successfully`,
+      review,
     });
   } catch (error) {
-    console.error('Create admin error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Failed to create admin' 
-    });
+    next(error);
   }
 };
+
+module.exports = exports;

@@ -1,14 +1,14 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { protect } = require('../middleware/auth.middleware');
 const {
-  updateReview,
-  deleteReview,
+  createReview,
+  getCourseReviews,
   markHelpful,
-} = require('../controllers/review.controller');
+} = require("../controllers/review.controller");
+const { protect, optionalAuth } = require("../middleware/auth.middleware");
 
-router.put('/:id', protect, updateReview);
-router.delete('/:id', protect, deleteReview);
-router.post('/:id/helpful', protect, markHelpful);
+router.post("/:courseId", protect, createReview);
+router.get("/course/:courseId", optionalAuth, getCourseReviews);
+router.put("/:id/helpful", protect, markHelpful);
 
 module.exports = router;

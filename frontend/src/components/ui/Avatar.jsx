@@ -1,61 +1,48 @@
-import './Avatar.css';
+import React from 'react';
 
-const Avatar = ({
-  src,
-  alt = '',
-  name,
+const Avatar = ({ 
+  src, 
+  alt = 'Avatar',
   size = 'md',
-  shape = 'circle',
-  status,
+  fallback,
   className = '',
-  ...props
+  ...props 
 }) => {
-  const getInitials = (name) => {
-    if (!name) return '?';
-    const words = name.split(' ');
-    if (words.length >= 2) {
-      return (words[0][0] + words[words.length - 1][0]).toUpperCase();
-    }
-    return name.slice(0, 2).toUpperCase();
+  const sizeClasses = {
+    sm: 'avatar-sm',
+    md: 'avatar-md',
+    lg: 'avatar-lg',
+    xl: 'avatar-xl',
   };
 
   const classes = [
     'avatar',
-    `avatar-${size}`,
-    `avatar-${shape}`,
-    className
+    sizeClasses[size],
+    className,
   ].filter(Boolean).join(' ');
 
-  return (
-    <div className={classes} {...props}>
-      {src ? (
-        <img src={src} alt={alt || name} className="avatar-image" />
-      ) : (
-        <span className="avatar-initials">{getInitials(name)}</span>
-      )}
-      {status && <span className={`avatar-status avatar-status-${status}`} />}
-    </div>
-  );
-};
+  const fallbackClasses = [
+    'avatar bg-primary-100 text-primary-700 flex items-center justify-center font-semibold',
+    sizeClasses[size],
+    className,
+  ].filter(Boolean).join(' ');
 
-// Avatar Group
-const AvatarGroup = ({ children, max = 4, size = 'md', className = '' }) => {
-  const childArray = Array.isArray(children) ? children : [children];
-  const visibleAvatars = childArray.slice(0, max);
-  const remainingCount = childArray.length - max;
+  if (!src && fallback) {
+    return (
+      <div className={fallbackClasses} {...props}>
+        {fallback}
+      </div>
+    );
+  }
 
   return (
-    <div className={`avatar-group ${className}`}>
-      {visibleAvatars}
-      {remainingCount > 0 && (
-        <div className={`avatar avatar-${size} avatar-circle avatar-overflow`}>
-          <span className="avatar-initials">+{remainingCount}</span>
-        </div>
-      )}
-    </div>
+    <img 
+      src={src || `https://ui-avatars.com/api/?name=${encodeURIComponent(alt)}&background=0ea5e9&color=fff`} 
+      alt={alt} 
+      className={classes}
+      {...props}
+    />
   );
 };
-
-Avatar.Group = AvatarGroup;
 
 export default Avatar;

@@ -1,141 +1,188 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Name is required'],
+      required: [true, "Please provide your name"],
       trim: true,
-      maxlength: [100, 'Name cannot exceed 100 characters'],
+      minlength: [2, "Name must be at least 2 characters"],
+      maxlength: [50, "Name cannot exceed 50 characters"],
     },
+
     email: {
       type: String,
-      required: [true, 'Email is required'],
+      required: [true, "Please provide your email"],
       unique: true,
       lowercase: true,
-      match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
+      trim: true,
+      match: [
+        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        "Please provide a valid email",
+      ],
     },
+
     password: {
       type: String,
-      required: [true, 'Password is required'],
-      minlength: [6, 'Password must be at least 6 characters'],
-      select: false,
+      required: [true, "Please provide a password"],
+      minlength: [6, "Password must be at least 6 characters"],
+      select: false, // Don't return password in queries by default
     },
+
     role: {
       type: String,
-      enum: ['student', 'instructor', 'admin'],
-      default: 'student',
+      enum: {
+        values: ["student", "instructor", "admin"],
+        message: "{VALUE} is not a valid role",
+      },
+      default: "student",
     },
+
     avatar: {
       type: String,
-      default: '',
+      default: "https://ui-avatars.com/api/?name=User&background=0ea5e9&color=fff",
     },
+
     bio: {
       type: String,
-      maxlength: [500, 'Bio cannot exceed 500 characters'],
-      default: '',
+      maxlength: [500, "Bio cannot exceed 500 characters"],
     },
-    phone: {
+
+    headline: {
       type: String,
-      default: '',
+      maxlength: [100, "Headline cannot exceed 100 characters"],
     },
-    // Student specific
-    enrolledCourses: [{
-      course: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Course',
-      },
-      enrolledAt: {
-        type: Date,
-        default: Date.now,
-      },
-      progress: {
-        type: Number,
-        default: 0,
-      },
-      completedLessons: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Lesson',
-      }],
-      completed: {
-        type: Boolean,
-        default: false,
-      },
-      completedAt: Date,
-    }],
-    wishlist: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Course',
-    }],
-    // Instructor specific
-    expertise: [{
-      type: String,
-    }],
+
     socialLinks: {
       website: String,
       linkedin: String,
       twitter: String,
-      youtube: String,
+      github: String,
     },
-    totalStudents: {
-      type: Number,
-      default: 0,
+
+    enrolledCourses: [
+      {
+        course: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Course",
+        },
+        enrolledAt: {
+          type: Date,
+          default: Date.now,
+        },
+        progress: {
+          type: Number,
+          default: 0,
+          min: 0,
+          max: 100,
+        },
+        completedLessons: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Lesson",
+          },
+        ],
+        isCompleted: {
+          type: Boolean,
+          default: false,
+        },
+        completedAt: Date,
+      },
+    ],
+
+    createdCourses: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Course",
+      },
+    ],
+
+    wishlist: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Course",
+      },
+    ],
+
+    certificates: [
+      {
+        course: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Course",
+        },
+        issuedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        certificateId: String,
+      },
+    ],
+
+    stats: {
+      totalCoursesCompleted: {
+        type: Number,
+        default: 0,
+      },
+      totalLearningHours: {
+        type: Number,
+        default: 0,
+      },
+      totalCertificates: {
+        type: Number,
+        default: 0,
+      },
     },
-    totalCourses: {
-      type: Number,
-      default: 0,
-    },
-    rating: {
-      type: Number,
-      default: 0,
-    },
-    totalReviews: {
-      type: Number,
-      default: 0,
-    },
-    // Common fields
+
     isActive: {
       type: Boolean,
       default: true,
     },
-    isVerified: {
+
+    isEmailVerified: {
       type: Boolean,
       default: false,
     },
-    lastLogin: {
-      type: Date,
-    },
-    resetPasswordToken: String,
-    resetPasswordExpire: Date,
+
+    emailVerificationToken: String,
+    emailVerificationExpires: Date,
+    passwordResetToken: String,
+    passwordResetExpires: Date,
+
+    lastLogin: Date,
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
   }
 );
 
 // Hash password before saving
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
-    return next();
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
   }
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
 // Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Virtual for courses created (for instructors)
-userSchema.virtual('createdCourses', {
-  ref: 'Course',
-  localField: '_id',
-  foreignField: 'instructor',
-});
+// Generate reset token
+userSchema.methods.generateResetToken = function () {
+  const resetToken = require("crypto").randomBytes(32).toString("hex");
+  this.passwordResetToken = require("crypto")
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  return resetToken;
+};
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);

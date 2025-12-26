@@ -1,65 +1,50 @@
-/**
- * Global error handler
- */
 const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err);
+  let error = { ...err };
+  error.message = err.message;
+
+  // Log error for debugging
+  console.error("❌ Error:", err);
+
+  // Mongoose bad ObjectId
+  if (err.name === "CastError") {
+    const message = "Resource not found";
+    error = { statusCode: 404, message };
+  }
+
+  // Mongoose duplicate key
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyPattern)[0];
+    const message = `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`;
+    error = { statusCode: 400, message };
+  }
 
   // Mongoose validation error
-  if (err.name === 'ValidationError') {
-    const messages = Object.values(err.errors).map((e) => e.message);
-    return res.status(400).json({
-      success: false,
-      message: messages.join('. '),
-    });
-  }
-
-  // Mongoose duplicate key error
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
-    return res.status(400).json({
-      success: false,
-      message: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists.`,
-    });
-  }
-
-  // Mongoose cast error (invalid ObjectId)
-  if (err.name === 'CastError') {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid ID format.',
-    });
+  if (err.name === "ValidationError") {
+    const message = Object.values(err.errors)
+      .map((val) => val.message)
+      .join(", ");
+    error = { statusCode: 400, message };
   }
 
   // JWT errors
-  if (err.name === 'JsonWebTokenError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid token. Please login again.',
-    });
+  if (err.name === "JsonWebTokenError") {
+    const message = "Invalid token. Please log in again";
+    error = { statusCode: 401, message };
   }
 
-  if (err.name === 'TokenExpiredError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Token expired. Please login again.',
-    });
+  if (err.name === "TokenExpiredError") {
+    const message = "Your token has expired. Please log in again";
+    error = { statusCode: 401, message };
   }
 
-  // Default error
-  res.status(err.statusCode || 500).json({
+  res.status(error.statusCode || 500).json({
     success: false,
-    message: err.message || 'Internal server error.',
+    error: error.message || "Server Error",
+    ...(process.env.NODE_ENV === "development" && {
+      stack: err.stack,
+      fullError: err,
+    }),
   });
 };
 
-/**
- * Not found handler
- */
-const notFound = (req, res, next) => {
-  res.status(404).json({
-    success: false,
-    message: `Route ${req.originalUrl} not found.`,
-  });
-};
-
-module.exports = { errorHandler, notFound };
+module.exports = errorHandler;

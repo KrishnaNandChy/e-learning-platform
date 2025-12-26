@@ -1,79 +1,97 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+const morgan = require("morgan");
+const cookieParser = require("cookie-parser");
+require("dotenv").config();
 
-const connectDB = require('./config/db');
-const { errorHandler, notFound } = require('./middleware/error.middleware');
+const connectDB = require("./config/db");
+const errorHandler = require("./middleware/error.middleware");
 
-// Initialize express
 const app = express();
 
-// Connect to database
+// Connect to Database
 connectDB();
 
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: process.env.CLIENT_URL || "http://localhost:5173",
   credentials: true,
 }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(morgan("dev"));
 
-// Request logging (development)
-if (process.env.NODE_ENV === 'development') {
-  app.use((req, res, next) => {
-    console.log(`${req.method} ${req.path}`);
-    next();
-  });
-}
-
-// Health check route
-app.get('/', (req, res) => {
-  res.json({
-    success: true,
-    message: 'EduLearn API is running',
-    version: '1.0.0',
-  });
-});
-
-app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'Server is healthy',
-    timestamp: new Date().toISOString(),
-  });
-});
+// Serve static files
+app.use("/uploads", express.static("uploads"));
 
 // API Routes
-app.use('/api/auth', require('./routes/auth.routes'));
-app.use('/api/courses', require('./routes/course.routes'));
-app.use('/api/lessons', require('./routes/lesson.routes'));
-app.use('/api/admin', require('./routes/admin.routes'));
-app.use('/api/notifications', require('./routes/notification.routes'));
-app.use('/api/reviews', require('./routes/review.routes'));
+app.get("/", (req, res) => {
+  res.json({
+    message: "🎓 EduLearn API is running!",
+    version: "1.0.0",
+    endpoints: {
+      auth: "/api/auth",
+      users: "/api/users",
+      courses: "/api/courses",
+      lessons: "/api/lessons",
+      enrollments: "/api/enrollments",
+      reviews: "/api/reviews",
+      categories: "/api/categories",
+      admin: "/api/admin",
+    },
+  });
+});
 
-// Error handling
-app.use(notFound);
+// Import Routes
+const authRoutes = require("./routes/auth.routes");
+const userRoutes = require("./routes/user.routes");
+const courseRoutes = require("./routes/course.routes");
+const lessonRoutes = require("./routes/lesson.routes");
+const enrollmentRoutes = require("./routes/enrollment.routes");
+const reviewRoutes = require("./routes/review.routes");
+const categoryRoutes = require("./routes/category.routes");
+const adminRoutes = require("./routes/admin.routes");
+
+// Use Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/courses", courseRoutes);
+app.use("/api/lessons", lessonRoutes);
+app.use("/api/enrollments", enrollmentRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/admin", adminRoutes);
+
+// 404 Handler
+app.use((req, res, next) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.originalUrl} not found`,
+  });
+});
+
+// Error Handler Middleware (should be last)
 app.use(errorHandler);
 
-// Start server
+// Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`
-🚀 EduLearn Server Started
-📍 Port: ${PORT}
-🌍 Environment: ${process.env.NODE_ENV || 'development'}
-📅 Started at: ${new Date().toISOString()}
+  ╔═══════════════════════════════════════╗
+  ║   🚀 EduLearn Server Running!        ║
+  ║   📍 Port: ${PORT}                      ║
+  ║   🌍 Environment: ${process.env.NODE_ENV || 'development'}  ║
+  ║   📊 Database: Connected              ║
+  ╚═══════════════════════════════════════╝
   `);
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.error('Unhandled Promise Rejection:', err);
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
+process.on("unhandledRejection", (err) => {
+  console.log("❌ UNHANDLED REJECTION! Shutting down...");
+  console.log(err.name, err.message);
   process.exit(1);
 });
+
+module.exports = app;

@@ -1,105 +1,70 @@
-import { useState, forwardRef } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
-import './Input.css';
+import React from 'react';
 
-const Input = forwardRef(({
+const Input = ({
   label,
   type = 'text',
   placeholder,
   value,
   onChange,
-  onBlur,
-  onFocus,
   error,
+  success,
   helperText,
+  icon,
+  iconPosition = 'left',
   disabled = false,
   required = false,
-  leftIcon,
-  rightIcon,
-  fullWidth = true,
-  size = 'md',
-  name,
-  id,
   className = '',
   ...props
-}, ref) => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-
-  const inputType = type === 'password' && showPassword ? 'text' : type;
-  const inputId = id || name;
-
-  const handleFocus = (e) => {
-    setIsFocused(true);
-    onFocus?.(e);
-  };
-
-  const handleBlur = (e) => {
-    setIsFocused(false);
-    onBlur?.(e);
-  };
-
-  const containerClasses = [
-    'input-container',
-    fullWidth ? 'input-full' : '',
-    `input-${size}`,
-    isFocused ? 'input-focused' : '',
-    error ? 'input-error' : '',
-    disabled ? 'input-disabled' : '',
-    className
+}) => {
+  const inputClasses = [
+    'input',
+    error && 'input-error',
+    success && 'input-success',
+    icon && iconPosition === 'left' && 'pl-12',
+    icon && iconPosition === 'right' && 'pr-12',
+    className,
   ].filter(Boolean).join(' ');
 
   return (
-    <div className={containerClasses}>
+    <div className="w-full">
       {label && (
-        <label htmlFor={inputId} className="input-label">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           {label}
-          {required && <span className="input-required">*</span>}
+          {required && <span className="text-danger-500 ml-1">*</span>}
         </label>
       )}
-      <div className="input-wrapper">
-        {leftIcon && <span className="input-icon input-icon-left">{leftIcon}</span>}
+      
+      <div className="relative">
+        {icon && iconPosition === 'left' && (
+          <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+            {icon}
+          </div>
+        )}
+        
         <input
-          ref={ref}
-          type={inputType}
-          id={inputId}
-          name={name}
+          type={type}
+          placeholder={placeholder}
           value={value}
           onChange={onChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          placeholder={placeholder}
           disabled={disabled}
-          required={required}
-          className="input-field"
-          aria-invalid={error ? 'true' : 'false'}
-          aria-describedby={helperText || error ? `${inputId}-helper` : undefined}
+          className={inputClasses}
           {...props}
         />
-        {type === 'password' && (
-          <button
-            type="button"
-            className="input-icon input-icon-right input-password-toggle"
-            onClick={() => setShowPassword(!showPassword)}
-            tabIndex={-1}
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
-          >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
-        )}
-        {rightIcon && type !== 'password' && (
-          <span className="input-icon input-icon-right">{rightIcon}</span>
+        
+        {icon && iconPosition === 'right' && (
+          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+            {icon}
+          </div>
         )}
       </div>
-      {(helperText || error) && (
-        <p id={`${inputId}-helper`} className={`input-helper ${error ? 'input-helper-error' : ''}`}>
-          {error || helperText}
+      
+      {(error || success || helperText) && (
+        <p className={`mt-2 text-sm ${error ? 'text-danger-600' : success ? 'text-success-600' : 'text-gray-500'}`}>
+          {error || success || helperText}
         </p>
       )}
     </div>
   );
-});
-
-Input.displayName = 'Input';
+};
 
 export default Input;

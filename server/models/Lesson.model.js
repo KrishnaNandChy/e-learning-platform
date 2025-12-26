@@ -1,63 +1,113 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const lessonSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: [true, 'Lesson title is required'],
+      required: [true, "Please provide lesson title"],
       trim: true,
+      minlength: [3, "Title must be at least 3 characters"],
+      maxlength: [200, "Title cannot exceed 200 characters"],
     },
+
     description: {
       type: String,
+      trim: true,
+      maxlength: [1000, "Description cannot exceed 1000 characters"],
     },
+
     course: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Course',
-      required: true,
+      ref: "Course",
+      required: [true, "Lesson must belong to a course"],
     },
+
     section: {
-      type: mongoose.Schema.Types.ObjectId,
-    },
-    type: {
       type: String,
-      enum: ['video', 'article', 'quiz', 'assignment'],
-      default: 'video',
+      required: [true, "Please provide section name"],
     },
-    content: {
-      // For video
-      videoUrl: String,
-      videoDuration: String, // e.g., "10:30"
-      // For article
-      articleContent: String,
-      // For quiz
-      questions: [{
-        question: String,
-        options: [String],
-        correctAnswer: Number,
-        explanation: String,
-      }],
-    },
-    duration: {
-      type: String,
-      default: '0:00',
-    },
+
     order: {
       type: Number,
-      default: 0,
+      required: true,
+      min: 0,
     },
+
+    type: {
+      type: String,
+      enum: ["video", "article", "quiz", "assignment", "resource"],
+      default: "video",
+    },
+
+    content: {
+      videoUrl: String,
+      articleContent: String,
+      resources: [
+        {
+          title: String,
+          url: String,
+          type: String, // pdf, zip, etc
+        },
+      ],
+    },
+
+    duration: {
+      type: Number,
+      default: 0, // in minutes
+    },
+
     isPreview: {
       type: Boolean,
       default: false,
     },
-    resources: [{
-      title: String,
-      type: String, // 'pdf', 'link', 'file'
-      url: String,
-    }],
+
+    isFree: {
+      type: Boolean,
+      default: false,
+    },
+
+    isPublished: {
+      type: Boolean,
+      default: false,
+    },
+
+    completedBy: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        completedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+
+    quiz: {
+      questions: [
+        {
+          question: String,
+          options: [String],
+          correctAnswer: Number,
+          explanation: String,
+        },
+      ],
+      passingScore: {
+        type: Number,
+        default: 70,
+      },
+    },
+
+    notes: String,
   },
   {
     timestamps: true,
   }
 );
 
-module.exports = mongoose.model('Lesson', lessonSchema);
+// Index for better query performance
+lessonSchema.index({ course: 1, order: 1 });
+lessonSchema.index({ course: 1, section: 1 });
+
+module.exports = mongoose.model("Lesson", lessonSchema);
